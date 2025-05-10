@@ -2,6 +2,8 @@ const { evaluateExpression } = require('../services/calculateService');
 
 exports.calculate = (req, res) => {
   const { functions } = req.body;
+  console.log(typeof(functions)) // check the type of functions
+  console.log(functions) // check the parameters of functions
   const result = evaluateExpression(functions);
   res.json(result);
 };
@@ -35,3 +37,5 @@ exports.validateParentheses = (req, res) => {
     message: "Parantezler doğru şekilde eşleştirilmiş."
   });
 };
+
+

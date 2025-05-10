@@ -205,7 +205,7 @@ function App() {
         } else {
           setResult(data.result);
         }
-        await fetch("http://localhost:5000/api/functions/save-calculation", {
+        await fetch("http://localhost:5000/api/save-formula", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
