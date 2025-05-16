@@ -1,7 +1,7 @@
 const FunctionModel = require('../models/FunctionModel');  
   
-exports.save = async function (functions) {
-  const newFunction = new FunctionModel({ functions });
+exports.save = async function (formula,frameId,name,unit) {
+  const newFunction = new FunctionModel({ formula , frameId,name,unit});
   return await newFunction.save();
 };
 

@@ -9,7 +9,7 @@ function App() {
   const [type, setType] = useState("");
   const [value, setValue] = useState("");
   const [showInput, setShowInput] = useState(false);
-  const [functions, setFunctions] = useState([]);
+  const [formula, setFormula] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [result, setResult] = useState(null);
@@ -21,13 +21,30 @@ function App() {
     Yusuf: [],
     Mustafa: []
   });
-
-  // Fetch parser values on component mount
+  const [frameIDs, setFrameIDs] = useState([]); 
+  const [selectedFrameID, setSelectedFrameID] = useState(null);
+  const [name, setName] = useState('');
+  const [unit, setUnit] = useState('');
+  
   useEffect(() => {
     fetchParserValues();
+    fetchFrameIDs();
   }, []);
 
-  // Effect to display calculation steps with 1-second delay
+  const fetchFrameIDs = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/frame-ids"); 
+      const data = await response.json();
+      console.log('data', data)
+      if (data.success) {
+        setFrameIDs(data.frameIDs); 
+      }
+    } catch (error) {
+      console.error("Error fetching frame IDs:", error);
+    }
+  };
+
+  
   useEffect(() => {
     if (calculationSteps.length > 0 && currentStepIndex < calculationSteps.length && calculationInProgress) {
       const timer = setTimeout(() => {
@@ -83,28 +100,29 @@ function App() {
     
     const newItem = { type, value };
     
-    if (functions.length === 0) {
-      setFunctions([...functions, newItem]);
+    if (formula.length === 0) {
+      setFormula([...formula, newItem]);
       setType("");
       setValue("");
       setShowInput(false);
       return;
     }
     
-    const lastItem = functions[functions.length - 1];
+    const lastItem = formula[formula.length - 1];
     
     if (
       (lastItem.type === "Constant" && type === "Constant") ||
       (lastItem.type === "Parser" && type === "Parser") ||
       (lastItem.type === "Operator" && type === "Operator") ||
       (lastItem.type === "Constant" && type === "Parser") ||
+      (lastItem.type === "Parser" && type === "Constant") ||
       (lastItem.type === "Parantheses" && type === "Parantheses" && lastItem.value === value)
     ) {
       alert("İki aynı türde değer yan yana eklenemez!");
       return;
     }
     
-    setFunctions([...functions, newItem]);
+    setFormula([...formula, newItem]);
     setType("");
     setValue("");
     setShowInput(false);
@@ -112,22 +130,45 @@ function App() {
 
   const handleEdit = () => {
     if (value.trim() === "") return;
+  
     const updatedItem = { type, value };
-    const updated = [...functions];
-    updated[editIndex] = updatedItem;
-    setFunctions(updated);
+    const updated = [...formula];
+  
+    // Düzenlenen elemanın indeksini al
+    const currentIndex = editIndex;
+  
+    // Sol ve sağdaki elemanları kontrol et
+    const leftItem = updated[currentIndex - 1]; // Solundaki eleman
+    const rightItem = updated[currentIndex + 1]; // Sağındaki eleman
+  
+    // Kontrol: Sol ve sağdaki elemanlarla karşılaştır
+    if (
+      (leftItem && leftItem.type === type) || // Sol eleman ile aynı tür
+      (rightItem && rightItem.type === type) || // Sağ eleman ile aynı tür
+      (leftItem && leftItem.type === "Constant" && type === "Parser") || // Sol eleman Constant, düzenlenen Parser
+      (rightItem && rightItem.type === "Constant" && type === "Parser") || // Sağ eleman Constant, düzenlenen Parser
+      (leftItem && leftItem.type === "Parantheses" && type === "Parantheses" && leftItem.value === value) || // Sol eleman Parantheses
+      (rightItem && rightItem.type === "Parantheses" && type === "Parantheses" && rightItem.value === value) // Sağ eleman Parantheses
+    ) {
+      alert("İki aynı türde değer yan yana eklenemez!");
+      return;
+    }
+  
+    // Eğer kontrol geçerse, güncellemeyi yap
+    updated[currentIndex] = updatedItem;
+    setFormula(updated);
     setEditIndex(null);
     setSelectedIndex(null);
     setType("");
     setValue("");
     setShowInput(false);
   };
-
+  
   const handleDoubleClick = (index) => {
     setEditIndex(index);
     setSelectedIndex(index);
-    setType(functions[index].type);
-    setValue(functions[index].value);
+    setType(formula[index].type);
+    setValue(formula[index].value);
     setShowInput(true);
   };
 
@@ -139,13 +180,13 @@ function App() {
 
   const handleClear = () => {
     if (editIndex !== null) {
-      const updated = [...functions];
+      const updated = [...formula];
       updated.splice(editIndex, 1);
-      setFunctions(updated);
+      setFormula(updated);
       setEditIndex(null);
       setSelectedIndex(null);
     } else {
-      setFunctions([]);
+      setFormula([]);
       setResult(null);
       setSelectedIndex(null);
       setEditIndex(null);
@@ -159,7 +200,7 @@ function App() {
   };
 
   const handleCalculate = async () => {
-    if (functions.length === 0) {
+    if (formula.length === 0) {
       alert("No values to calculate");
       return;
     }
@@ -174,9 +215,9 @@ function App() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ functions }),
+        body: JSON.stringify({ formula }),
       });
-      console.log("Gönderilen veriler:", functions);
+      console.log("Gönderilen veriler:", formula);
 
       const parenthesesData = await parenthesesResponse.json();
   
@@ -190,12 +231,11 @@ function App() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ functions }),
+        body: JSON.stringify({ formula }),
       });
-  
+      
       const data = await response.json();
       console.log("Backend'den gelen cevap:", data);
-
       if (data.success) {
         if (data.steps && data.steps.length > 0) {
           setCalculationSteps(data.steps);
@@ -210,7 +250,7 @@ function App() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ functions}),
+          body: JSON.stringify({formula,  frameId: selectedFrameID, name , unit}),
         });
       } else {
         alert(data.error || "Hesaplama sırasında bir hata oluştu");
@@ -353,7 +393,16 @@ function App() {
         <option value="Operator">Operator</option>
         <option value="Parantheses">Parantheses</option>
       </select>
-      
+      <select
+        style={{ marginLeft: "10px", marginRight: "10px", cursor: "pointer" }}
+        value={selectedFrameID} 
+        onChange={(e) => setSelectedFrameID(e.target.value)} 
+      >
+        <option value="">Select FrameID</option>
+        {frameIDs.map((frameId) => (
+          <option key={frameId} value={frameId}>{frameId}</option>
+        ))}
+      </select>
       {showInput && (
         <>
           {renderInput()}
@@ -379,7 +428,7 @@ function App() {
           padding: "5px",
         }}
       >
-        {functions.map((item, index) => (
+        {formula.map((item, index) => (
           <div
             key={index}
             onDoubleClick={() => handleDoubleClick(index)}
@@ -416,7 +465,9 @@ function App() {
           </div>
         ))}
       </div>
-      
+      <input style={{marginLeft:"10px" , borderRadius:"5px"}} placeholder="Enter the name" value={name} onChange={(e) => setName(e.target.value)} ></input>
+      <input style={{marginLeft:"10px" , borderRadius:"5px"}} placeholder="Enter the unit" value={unit} onChange={(e) => setUnit(e.target.value)} ></input>
+
       <button
         style={{ margin: "10px", borderRadius: "5px", cursor: "pointer" }}
         onClick={handleCalculate}

@@ -10,6 +10,5 @@ app.use(cors());
 app.use(bodyParser.json());
 
 app.use('/', apiRoutes);
-app.use('/', apiRoutes);
 
 module.exports = app;

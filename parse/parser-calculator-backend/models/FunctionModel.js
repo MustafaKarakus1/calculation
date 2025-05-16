@@ -6,8 +6,11 @@ const FunctionItemSchema = new mongoose.Schema({
 }, { _id: false });
 
 const FunctionSchema = new mongoose.Schema({
-  functions: { type: [FunctionItemSchema], required: true },
+  frameId: {type: String, required: true} ,
+  name : {type: String, required: true},
+  unit : {type: String , required: true},
+  formula: { type: [FunctionItemSchema], required: true },
   createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model("Function", FunctionSchema);
+module.exports = mongoose.model("Formula", FunctionSchema);
