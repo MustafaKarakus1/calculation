@@ -134,27 +134,26 @@ function App() {
     const updatedItem = { type, value };
     const updated = [...formula];
   
-    // Düzenlenen elemanın indeksini al
     const currentIndex = editIndex;
   
-    // Sol ve sağdaki elemanları kontrol et
-    const leftItem = updated[currentIndex - 1]; // Solundaki eleman
-    const rightItem = updated[currentIndex + 1]; // Sağındaki eleman
+    const leftItem = updated[currentIndex - 1]; 
+    const rightItem = updated[currentIndex + 1]; 
   
-    // Kontrol: Sol ve sağdaki elemanlarla karşılaştır
+    
     if (
-      (leftItem && leftItem.type === type) || // Sol eleman ile aynı tür
-      (rightItem && rightItem.type === type) || // Sağ eleman ile aynı tür
-      (leftItem && leftItem.type === "Constant" && type === "Parser") || // Sol eleman Constant, düzenlenen Parser
-      (rightItem && rightItem.type === "Constant" && type === "Parser") || // Sağ eleman Constant, düzenlenen Parser
-      (leftItem && leftItem.type === "Parantheses" && type === "Parantheses" && leftItem.value === value) || // Sol eleman Parantheses
-      (rightItem && rightItem.type === "Parantheses" && type === "Parantheses" && rightItem.value === value) // Sağ eleman Parantheses
+      (leftItem && leftItem.type === type) ||
+      (rightItem && rightItem.type === type) || 
+      (leftItem && leftItem.type === "Constant" && type === "Parser") || 
+      (rightItem && rightItem.type === "Constant" && type === "Parser") || 
+      (leftItem && leftItem.type === "Parser" && type === "Parser") || 
+      (rightItem && rightItem.type === "Parser" && type === "Parser") || 
+      (leftItem && leftItem.type === "Parantheses" && type === "Parantheses" && leftItem.value === value) || 
+      (rightItem && rightItem.type === "Parantheses" && type === "Parantheses" && rightItem.value === value) 
     ) {
       alert("İki aynı türde değer yan yana eklenemez!");
       return;
     }
   
-    // Eğer kontrol geçerse, güncellemeyi yap
     updated[currentIndex] = updatedItem;
     setFormula(updated);
     setEditIndex(null);
@@ -269,8 +268,11 @@ function App() {
           type="text"
           placeholder="Enter your constant value"
           value={value}
-          onChange={(e) => setValue(e.target.value)}
-        />
+          onChange={(e) => {
+            const newValue = e.target.value;
+            if (newValue === "" || /^[0-9]*\.?[0-9]*$/.test(newValue)) {
+              setValue(newValue);
+            }}}        />
       );
     } else if (type === "Parser") {
       return (
